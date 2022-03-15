@@ -2,6 +2,10 @@
 
 Stript was create to improve navigation on the github page rendering mermaid containing markdown md file.
 
+# Installation
+
+https://greasyfork.org/en/scripts/441574-github-mermaid
+
 ## Permalink on the same page
 
 It is possible to prefix any label on the chart with "hash" and "number" (example "#2").
