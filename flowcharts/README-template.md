@@ -46,7 +46,7 @@ C -->|Two| E[fa:fa-car Result 2]
 ```mermaid
 %%{init: { 'logLevel': 'debug', 'theme': 'forest' } }%%
 graph TD
-    A([Start"]) -->|arrow head| B[process Box]
+    A([Start]) -->|arrow head| B[process Box]
     B ---|open link| C{diamond <b>decision</b> point}
     C ----->|#1 longer link| D[this]
     C -...->|longer dotted link| O
