@@ -4,9 +4,19 @@ Stript was create to improve navigation on the github page rendering mermaid con
 
 # Installation
 
+Install Tampermonkey
+- [chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo/related)
+- [firefox](https://addons.mozilla.org/en-GB/firefox/addon/tampermonkey/)
+
+then install this script
+
 https://greasyfork.org/en/scripts/441574-github-mermaid
 
-## Permalink on the same page
+... then reload this github page to see it in action against mermaid markdown
+
+# Features
+
+## * Permalink on the same page
 
 It is possible to prefix any label on the chart with "hash" and "number" (example "#2").
 
@@ -33,15 +43,21 @@ Example:
 ```
 
 
-## #10 header to scroll
+## * Coloring links
 
-Here is content under header to which user will be scrolled once he click process box with title "#10 b title" on above flow chart.
+By default when [hyperlink](https://mermaid-js.github.io/mermaid/#/flowchart?id=interaction) is defined on the chart it's not really clear that it's a link. It lack styling typical for hyperlinks (blue color), it is only visible that it's a link once one hover over it, mouse cursor will change to state "pointer"
 
-# Marmaid test
+This script changes that to make links visible as regular blue links.
 
-- [github feature](https://github.com/mermaid-js/mermaid#readme)
-- [official mermaid doc](https://github.blog/2022-02-14-include-diagrams-markdown-files-mermaid/)
-- [Flowcharts - Basic Syntax](https://mermaid-js.github.io/mermaid/#/flowchart)
+## * Generating links to live editor
+
+This script also generates special link on each chart which once clicked opens new tab in the browser with this chart in [live editor](https://mermaid-js.github.io/mermaid-live-editor)
+
+# More materials about mermaid itself
+
+- [Mermaid github homepage](https://github.com/mermaid-js/mermaid#readme)
+- [Github announcment to provide native support for mermaid](https://github.blog/2022-02-14-include-diagrams-markdown-files-mermaid/)
+- [Flowcharts Basic Syntax - doc page](https://mermaid-js.github.io/mermaid/#/flowchart)
 
 ## alternatives
 
@@ -49,6 +65,9 @@ Here is content under header to which user will be scrolled once he click proces
 - https://store.omnigroup.com/omnigraffle
 - https://www.gliffy.com/
 - https://news.ycombinator.com/item?id=18788244
+
+
+# some more examples
 
 ~~~
 ```mermaid
@@ -173,6 +192,10 @@ graph TD
         %% from: https://mermaid-js.github.io/mermaid/#/flowchart?id=css-classes
 ```
 
+
+###### #10 header to scroll
+
+Here is content under header to which user will be scrolled once he click process box with title "#10 b title" on above flow chart.
 
 ###### #1 longer link
 
