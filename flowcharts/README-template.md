@@ -20,13 +20,13 @@ https://greasyfork.org/en/scripts/441574-github-mermaid
 
 It is possible to prefix any label on the chart with "hash" and "number" (example "#2").
 
-This part of label will be changed into red link with permalink which once clicked will scroll to header on the same page where that header also starts with the same "hash" and "number" (In case of above example it header will have to start from exactly with "#2")
+This part of label will be transformed into a red link with permalink which once clicked will scroll to header on the same page where that header also starts with the same "hash" and "number" (In case of above example it header will have to start from exactly with "#2")
 
 Example:
 
 ```mermaid
   graph TD;
-      A-->B[#10 b title];
+      A-->B[#10 b title <b>cl1ck me</b>];
       A-->C;
       B-->D;
       C-->D;
@@ -41,6 +41,8 @@ This script changes that to make links visible as regular blue links.
 ## * Generating links to live editor
 
 This script also generates special link on each chart which once clicked opens new tab in the browser with this chart in [live editor](https://mermaid-js.github.io/mermaid-live-editor)
+
+Here is online url [decoder](https://stopsopa.github.io/mermaid/)
 
 # More materials about mermaid itself
 
@@ -85,6 +87,8 @@ B --> C{Decision}
 C -->|One| D[Result 1]
 C -->|Two| E[fa:fa-car Result 2]
 ```
+
+
 
 # advanced
 
