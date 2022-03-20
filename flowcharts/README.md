@@ -201,19 +201,18 @@ graph TD
 sequenceDiagram
     autonumber
     actor A as #35;1 Alice
-    participant J as John
+    participant J as #35;10 John
     participant B as Bob
-    link Alice: Dashboard @ https://dashboard.contoso.com/alice
-Note over A,B: Entity codes to escape characters #35;-#35;35#59; #38;-#35;38#59;
+Note over A,B: #35;2 Entity codes to escape characters #35;-#35;35#59; #38;-#35;38#59;
 
 A->>J: Hello John, how are you?
-loop Healthcheck
-    J->>J: Fight against hypochondria
+loop #35;1 Healthcheck
+    J->>J: #35;2 Fight against hypochondria
 end
 Note right of J: Rational thoughts!
 J-->>A: Great!
 A->>J: #9829;
-J->>B: How about you?
+J->>B: #35;10 How about you?
 B-->>J: Jolly good!
 %% this is a comment
 activate J
@@ -222,12 +221,12 @@ A->J: Solid line without arrow
 A-->J: Dotted line without arrow
 deactivate J
 A->>J: Solid line with arrowhead
-A-->>J: Dotted line with arrowhead
+A-->>J: #35;1 Dotted line with arrowhead
 deactivate J
 A-xJ: Solid line with a cross at the
 A--xJ: Dotted line with a cross at the end.
 Note over J,A: A typical interaction
-A-)J: Solid line with an open arrow at the end (async)
+A-)J: #35;222 Solid line with an open arrow at the end (async)
 A--)J: Dotted line with a open arrow at the end (async)
 
 Note over A,B: Loops
@@ -250,10 +249,11 @@ rect rgb(191, 223, 255, 0.4)
 Note over A,B: Parallel #38; Background Highlighting
     par John to Bob
         J->>B: Hello guys!
-    and John to Alice
+    and #35;2 John to Alice
         J->>A: Hello guys!
     end
 end
+
 ```
 ~~~
 
@@ -261,19 +261,18 @@ end
 sequenceDiagram
     autonumber
     actor A as #35;1 Alice
-    participant J as John
+    participant J as #35;10 John
     participant B as Bob
-    link Alice: Dashboard @ https://dashboard.contoso.com/alice
-Note over A,B: Entity codes to escape characters #35;-#35;35#59; #38;-#35;38#59;
+Note over A,B: #35;2 Entity codes to escape characters #35;-#35;35#59; #38;-#35;38#59;
 
 A->>J: Hello John, how are you?
-loop Healthcheck
-    J->>J: Fight against hypochondria
+loop #35;1 Healthcheck
+    J->>J: #35;2 Fight against hypochondria
 end
 Note right of J: Rational thoughts!
 J-->>A: Great!
 A->>J: #9829;
-J->>B: How about you?
+J->>B: #35;10 How about you?
 B-->>J: Jolly good!
 %% this is a comment
 activate J
@@ -282,12 +281,12 @@ A->J: Solid line without arrow
 A-->J: Dotted line without arrow
 deactivate J
 A->>J: Solid line with arrowhead
-A-->>J: Dotted line with arrowhead
+A-->>J: #35;1 Dotted line with arrowhead
 deactivate J
 A-xJ: Solid line with a cross at the
 A--xJ: Dotted line with a cross at the end.
 Note over J,A: A typical interaction
-A-)J: Solid line with an open arrow at the end (async)
+A-)J: #35;222 Solid line with an open arrow at the end (async)
 A--)J: Dotted line with a open arrow at the end (async)
 
 Note over A,B: Loops
@@ -310,10 +309,11 @@ rect rgb(191, 223, 255, 0.4)
 Note over A,B: Parallel #38; Background Highlighting
     par John to Bob
         J->>B: Hello guys!
-    and John to Alice
+    and #35;2 John to Alice
         J->>A: Hello guys!
     end
 end
+
 ```
 
 

@@ -2,7 +2,7 @@
 // @name         GITHUB mermaid
 // @namespace    http://tampermonkey.net/
 // @homepage     https://github.com/stopsopa/mermaid
-// @version      0.1
+// @version      0.2
 // @description  Enhancing mermaid markdown on GITHUB
 // @author       Szymon Dzialowski
 // @include      /(viewscreen\.githubusercontent\.com\/)/
@@ -37,12 +37,14 @@ const log = (function (log) {
   })()
 );
 
-function getHash(href) {
+function getUUIDFromUrl(href) {
   href = String(href);
   return href.replace(/^.*?#(.*)$/, "$1");
 }
 
-const hash = getHash(location.href);
+function getHash() {
+  return location.hash.replace(/^#(.*)$/, "$1");
+}
 
 /**
  * Minified by jsDelivr using Terser v5.7.1.
@@ -60,6 +62,10 @@ const hash = getHash(location.href);
 
 (function () {
   "use strict";
+
+  const xmlns = "http://www.w3.org/2000/svg";
+
+  const xlink = "http://www.w3.org/1999/xlink";
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
@@ -238,6 +244,9 @@ const hash = getHash(location.href);
         return Object.prototype.toString.call(obj) === "[object NodeList]";
       },
       isNode: isNode,
+      isSvgElement: (e) => {
+        return e instanceof SVGElement;
+      },
       children: function (parentNode) {
         try {
           // read also about
@@ -336,7 +345,7 @@ const hash = getHash(location.href);
   const iframes = Array.from(document.querySelectorAll("iframe")).map((iframe) => {
     return {
       iframe,
-      hash: getHash(iframe.getAttribute("src")),
+      hash: getUUIDFromUrl(iframe.getAttribute("src")),
       code: (function () {
         try {
           return JSON.parse(iframe.getAttribute("data-content")).data.replace(/&gt;/g, ">").replace(/&lt;/g, "<");
@@ -344,8 +353,11 @@ const hash = getHash(location.href);
           log("iframe", iframe.getAttribute("src"), "error: ", e);
         }
       })(),
+      ready: false,
     };
   });
+
+  iframes.forEach((i) => (i.test = true));
 
   function box(content, opt) {
     if (!opt) {
@@ -395,6 +407,48 @@ const hash = getHash(location.href);
     typeof opt.fn === "function" && opt.fn(div);
   }
 
+  /**
+   * should come in form #\d+
+   */
+  async function findIdAttrBasedOnHashId(hashId, e) {
+    const reg = /^#\d+$/;
+
+    if (!reg.test(hashId)) {
+      console.log(`hashId don't match ${reg}, current value is >${hashId}<, e:`, e);
+      throw new Error(`hashId don't match ${reg}, current value is >${hashId}<`);
+    }
+
+    const selector = `a[href^="${hashId}-"].anchor`;
+
+    log(`attempt to scroll to: (graph:${hashId}) corresponding on the parent page '${selector}'`);
+
+    const a = document.querySelector(selector);
+
+    if (a) {
+      const id = a.getAttribute("id");
+
+      if (id) {
+        log(`scrolling to: (graph:${hashId}) corresponding on the parent page '${selector}', <a id='#${id}'/>`);
+
+        return {
+          hash: `#${id}`,
+          a,
+        };
+      } else {
+        const ex = new Error(`Something is wrong with id attribute on element '${selector}'`);
+
+        ex.payload = {
+          a,
+          id,
+        };
+
+        throw ex;
+      }
+    } else {
+      throw new Error(`Element by selector '${selector}' not found on the page`);
+    }
+  }
+
   (async function () {
     const svg = await new Promise((res) => {
       const handler = setInterval(() => {
@@ -411,9 +465,43 @@ const hash = getHash(location.href);
     const isInsideMermaidIframe = svg.parentNode.classList.contains("mermaid");
 
     if (isInsideMermaidIframe) {
-      // window.addEventListener("message", function (e) {
-      //   log("in iframe received", e);
-      // });
+      const location_hash_without_hashbang = getUUIDFromUrl(location.href);
+
+      const parentHref = await new Promise((resolve, reject) => {
+        const handler = function (e) {
+          if (e.origin === "https://github.com") {
+            log("iframe_ready_feedback received", e);
+
+            if (e.data.iframe_ready_feedback) {
+              window.removeEventListener("message", handler);
+
+              return resolve(e.data.iframe_ready_feedback.split("#")[0]);
+            }
+
+            reject({
+              parentHref_error: "iframe_ready_feedback is not delivered",
+              e,
+            });
+          } else {
+            reject({
+              parentHref_error: e,
+            });
+
+            log(`iframe message with invalid origin: ${e.origin}`, e);
+          }
+        };
+        window.addEventListener("message", handler);
+
+        window.parent.postMessage(
+          {
+            iframe_ready: true,
+            location_hash_without_hashbang,
+          },
+          "*"
+        );
+      });
+
+      log("parentHref, got this", parentHref);
 
       addCss(`
 a {
@@ -430,10 +518,49 @@ a.clickable * {
 a.clickable a {
   color: white;
 }
+tspann {
+
+  filter:
+    drop-shadow(-1px -1px 0px blue)
+    drop-shadow(2px -1px 0px blue)
+    drop-shadow(2px 2px 0px blue)
+    drop-shadow(-1px 2px 0px blue)
+}
+a.mermaidlink {
+  color: white;
+  background-color: #ce3c3c;
+  padding-right: 1px;
+  padding-left: 1px;
+  margin-left: 2px;
+  filter:
+  drop-shadow(-1px -2px 0px red)
+  drop-shadow(-1px -1px 0px red)
+  drop-shadow(-1px 0px 0px red)
+  drop-shadow(-1px 1px 0px red)
+  drop-shadow(-1px 2px 0px red);
+}
   `);
       const labelsOnLines = Array.from(document.querySelectorAll("foreignObject .edgeLabel"));
 
       Array.from(document.querySelectorAll("foreignObject > div")).forEach((e) => {
+        if (!labelsOnLines.find((x) => x === e)) {
+          labelsOnLines.push(e);
+        }
+      });
+
+      Array.from(document.querySelectorAll("tspan")).forEach((e) => {
+        if (!labelsOnLines.find((x) => x === e)) {
+          labelsOnLines.push(e);
+        }
+      });
+
+      Array.from(document.querySelectorAll("text.messageText")).forEach((e) => {
+        if (!labelsOnLines.find((x) => x === e)) {
+          labelsOnLines.push(e);
+        }
+      });
+
+      Array.from(document.querySelectorAll("text.loopText")).forEach((e) => {
         if (!labelsOnLines.find((x) => x === e)) {
           labelsOnLines.push(e);
         }
@@ -445,16 +572,16 @@ a.clickable a {
 
         // log("emmit top.postMessage", data);
 
-        window.top.postMessage(data, "*");
+        window.parent.postMessage(data, "*");
       }
 
       const buff = [];
 
-      labelsOnLines.forEach((el) => {
+      labelsOnLines.forEach(async (el) => {
         const t = manipulation.txt(el);
 
         if (typeof t.at === "string") {
-          const m = t.at.match(/^\s*(#\d+)\s*([^\d])(.*)$/);
+          const m = t.at.match(/^\s*(\[?)(#\d+)\s*([^\d])(.*)$/);
 
           // [
           //   {
@@ -478,10 +605,61 @@ a.clickable a {
           if (m) {
             buff.push(Object.assign({}, m));
 
-            const a = document.createElement("a");
-            a.setAttribute("href", "javascript:void(0)");
-            const permalink = String(m[1]);
-            a.innerText = permalink;
+            const isIvg = manipulation.isSvgElement(el);
+
+            const permalink = String(m[2]);
+
+            const actualPermalink = await new Promise((resolve, reject) => {
+              const handler = function (e) {
+                if (e.origin === "https://github.com") {
+                  log("find_actual_permalink_feedback received", e);
+
+                  if (e.data.find_actual_permalink_feedback) {
+                    window.removeEventListener("message", handler);
+
+                    return resolve(e.data.find_actual_permalink_feedback);
+                  }
+
+                  reject({
+                    parentHref_error: "find_actual_permalink_feedback is not delivered",
+                    e,
+                  });
+                } else {
+                  reject({
+                    parentHref_error: e,
+                  });
+
+                  log(`iframe message with invalid origin: ${e.origin}`, e);
+                }
+              };
+              window.addEventListener("message", handler);
+
+              window.parent.postMessage(
+                {
+                  find_actual_permalink: permalink,
+                  location_hash_without_hashbang,
+                },
+                "*"
+              );
+            });
+
+            const fullPermalink = parentHref + actualPermalink;
+
+            let a;
+            if (isIvg) {
+              //https://stackoverflow.com/a/38409875
+              a = document.createElementNS(xmlns, "a");
+              a.setAttributeNS(xlink, "xlink:href", fullPermalink);
+              // a.setAttributeNS(xlink, "class", "mermaidlink");
+              a.classList.add("mermaidlink");
+              a.appendChild(document.createTextNode(m[1] + m[2]));
+            } else {
+              a = document.createElement("a");
+              a.setAttribute("href", fullPermalink);
+              // a.setAttribute("class", "mermaidlink");
+              a.classList.add("mermaidlink");
+              a.innerText = m[1] + m[2];
+            }
 
             manipulation.prepend(el, a);
 
@@ -491,7 +669,7 @@ a.clickable a {
               })
             );
 
-            manipulation.txt(el, null, m[2] + m[3]);
+            manipulation.txt(el, null, m[3] + m[4]);
           } else {
             Array.from(el.querySelectorAll("a")).forEach((a) => {
               a.addEventListener("click", (e) =>
@@ -523,7 +701,7 @@ a.clickable a {
           log("click", div);
           div.addEventListener("click", (e) => {
             emit(e, {
-              liveeditor: hash,
+              liveeditor: location_hash_without_hashbang,
             });
           });
         },
@@ -549,19 +727,143 @@ a.clickable a {
         .map((e) => e.parentNode)
         .filter(Boolean);
 
+      async function highlightBlock(a) {
+        location.href = a.getAttribute("href");
+
+        await delay(50);
+
+        a.scrollIntoView(true);
+
+        const parent = a.parentNode;
+
+        const localAnchors = anchors.filter((a) => a !== parent);
+
+        const found = [parent];
+
+        let tmp = parent.nextSibling;
+
+        while (tmp && !localAnchors.includes(tmp)) {
+          if (manipulation.isNode(tmp)) {
+            if (tmp.nodeType !== 3) {
+              found.push(tmp);
+            }
+
+            tmp = tmp.nextSibling;
+            continue;
+          }
+
+          break;
+        }
+
+        log("siblings to highlight", found);
+
+        if (parent) {
+          found.forEach((f) => {
+            f.classList.add("highlighter");
+          });
+
+          setTimeout(() => {
+            found.forEach((f) => {
+              f.classList.remove("highlighter");
+            });
+          }, 3000);
+        }
+      }
+
+      function triggerReady(id) {
+        iframes.forEach((f) => {
+          if (f.hash === id) {
+            f.ready = true;
+          }
+        });
+
+        const allReady = !iframes.find((f) => !f.ready);
+
+        if (allReady) {
+          const hash = getHash();
+
+          if (allReady) {
+            if (hash) {
+              let a = document.querySelector(`[id="${hash}"].anchor`);
+
+              if (!a) {
+                a = document.querySelector(`[href="#${hash}"].anchor`);
+              }
+
+              log("allReady attempt ".repeat(50), hash, a);
+
+              if (a) {
+                log("allReady triggered ".repeat(50), hash, "a: ", a);
+
+                window.aa = a;
+
+                highlightBlock(a);
+              }
+            }
+          }
+        }
+      }
+
       window.addEventListener(
         "message",
         async function (e) {
           try {
-            log("message", e.data);
             if (e.origin !== origin) {
-              //return;
+              return log(`Error: Origin of message from iframe should be '${origin}', but it is '${e.origin}'`);
+            }
 
-              throw new Error(`Origin of message from iframe should be '${origin}', but it is '${e.origin}'`);
+            if (e.data.identity) {
+              return log(`Parent iframe message error: native event:`, e);
+            }
+
+            log("parent received a message", e.data, "origin", e.origin);
+
+            if (e.data.find_actual_permalink) {
+              let error, hash;
+
+              try {
+                log("parent find_actual_permalink", e);
+
+                ({ hash } = await findIdAttrBasedOnHashId(e.data.find_actual_permalink));
+              } catch (e) {
+                hash = e.data.find_actual_permalink;
+
+                error = `parent find_actual_permalink error: ${e}`;
+              }
+
+              e.source.postMessage(
+                {
+                  find_actual_permalink_feedback: hash,
+                  error,
+                },
+                "*"
+              );
+
+              return;
+            }
+
+            /**
+             * Don't need that one because I found native one, but I'll leave it commented in case programmers at  github will change this event
+             */
+            if (e.data.iframe_ready) {
+              triggerReady(e.data.location_hash_without_hashbang);
+
+              log("iframe_ready??", e);
+
+              e.source.postMessage(
+                {
+                  iframe_ready_feedback: location.href,
+                },
+                "*"
+              );
+
+              return;
             }
 
             if (e.data.liveeditor) {
               const found = iframes.find((f) => f.hash === e.data.liveeditor);
+
+              log("parent received a message", iframes, "liveeditor", e.data.liveeditor, "found", found);
 
               if (found) {
                 window.open(pako.craeteLink(found.code), "_blank").focus();
@@ -576,82 +878,24 @@ a.clickable a {
               return;
             }
 
-            const selector = `a[href^="${e.data.permalink}-"].anchor`;
+            const { hash, a } = await findIdAttrBasedOnHashId(e.data.permalink, e);
 
-            log(`attempt to scroll to: (graph:${e.data.permalink}) corresponding on the parent page '${selector}'`);
+            // closing full screen view for diagram (if opened)
+            Array.from(document.querySelectorAll("details.details-reset")).forEach((e) => e.removeAttribute("open"));
 
-            const a = document.querySelector(selector);
+            // await delay(50);
 
-            if (a) {
-              const id = a.getAttribute("id");
-
-              if (id) {
-                log(
-                  `scrolling to: (graph:${e.data.permalink}) corresponding on the parent page '${selector}', <a id='#${id}'/>`
-                );
-
-                // closing full screen view for diagram (if opened)
-                Array.from(document.querySelectorAll("details.details-reset")).forEach((e) =>
-                  e.removeAttribute("open")
-                );
-
-                await delay(50);
-
-                location.href = `#${id}`;
-
-                const parent = a.parentNode;
-
-                const localAnchors = anchors.filter((a) => a !== parent);
-
-                const found = [parent];
-
-                let tmp = parent.nextSibling;
-
-                while (tmp && !localAnchors.includes(tmp)) {
-                  if (manipulation.isNode(tmp)) {
-                    if (tmp.nodeType !== 3) {
-                      found.push(tmp);
-                    }
-
-                    tmp = tmp.nextSibling;
-                    continue;
-                  }
-
-                  break;
-                }
-
-                log("siblings to highlight", found);
-
-                if (parent) {
-                  found.forEach((f) => {
-                    f.classList.add("highlighter");
-                  });
-
-                  setTimeout(() => {
-                    found.forEach((f) => {
-                      f.classList.remove("highlighter");
-                    });
-                  }, 3000);
-                }
-              } else {
-                const ex = new Error(`Something is wrong with id attribute on element '${selector}'`);
-
-                ex.payload = {
-                  a,
-                  id,
-                };
-
-                throw ex;
-              }
-            } else {
-              throw new Error(`Element by selector '${selector}' not found on the page`);
-            }
+            highlightBlock(a);
           } catch (e) {
-            log(`iframe message error: ${e}`, e, {
-              message: e.message,
-              stack: e.stack.split("\n"),
-              payload: e.payload,
-            });
+            log(
+              `iframe message error:`,
+              {
+                message: e.message,
+                stack: e.stack.split("\n"),
+                payload: e.payload,
+              },
+              e
+            );
           }
         },
         false
